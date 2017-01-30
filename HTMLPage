@@ -1,0 +1,33 @@
+  <!DOCTYPE html>
+<html>
+<head>
+    <title>Fighting Fantasy</title>
+    <meta charset="utf-8" />
+
+    <link rel="stylesheet" href="BookPages.css" />
+</head>
+
+<body>
+    <h1 id="heading">Fighting Fantasy</h1>
+
+    <div id="game">
+        <img id="image" width="100" height="100" />
+        <p id="PLAY"></p>
+        <p id="INSTRUCT"></p>
+        <p><a id="hp"></a></p>
+        <p><a id="stam"></a></p>
+        <p id="story"></p>
+        <h4 id="c1"></h4>
+        <h4 id="c2"></h4>
+        <br />
+        <p id="hint">Click on the text to advance the story...</p>
+    </div>
+
+    <audio id="myAudio">
+        <source src="Audio/Mary_Lattimore_-_Otis_Walks_into_the_Woods.mp3" type="audio/mp3" />
+    </audio>
+
+    <script src="Scripts/FF_Test_For_Loop.js"></script>
+
+</body>
+</html>
