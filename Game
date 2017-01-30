@@ -1,0 +1,382 @@
+var eState = 0;          //current state of the game, which is the menu
+var playerHealth = 100;      //player health
+var stamina = 100;         //needed to perform actions
+var chapter = 0;          //progression of story
+var pages = 0;          //what part of the story is active
+var eHealth = 100;     //enemy health
+
+var killChild = false;     //is the child dead
+var searchForest = false;    //are you searching for the mother
+
+var eGame = Object.freeze({
+    MENU: 0,
+    INSTRUCT: 1,
+    GAME: 2,
+    DEATH: 3,
+    VICTORY: 4
+});     //enums for game states
+
+var instructions = [
+    "Choices Define You",
+    "Manage your Health and Stamina wisely",
+    "Stamina is crucial to perform certain actions",
+    "The higher your stamina, the more likely you are to succeed!",
+    "Click the PLAY to start the adventure!"];      //array of text for instructions
+var introText = [
+    "A grizzled soldier has enough of the constant warfare and bloodshed, he does not wish to be another bloodstain on the battlefield.</br>At night, he sneaks away from his barracks, outside of no-man’s land. Fleeing the army and the war effort, he is an enemy and a traitor to be killed on sight.</br>His only hope is to escape from the land and live his life in peace.</br>However, he must traverse through an ancient forest to set forth on his perilous journey…",
+    "Stepping into the forest, the soldier hears strange voices all around.</br>A dark presence is nearing by, putting him on edge. A branch snaps behind him…"
+];   //array of introduction text
+var forestChoice = [
+    "The solider swings his sword with all his might...",
+    "He commands the figure to show themselves, or be ready to fight."
+];       //array of forest text
+var forConsequence = [
+    'Cracking the figure over the head, the soldier realizes it is a little boy.</br>Distraught, the soldier runs away, horrified of his own actions. In doing so, he stumbles into a river…',
+    ' The stranger appears from the darkness, and is a little boy. </br>He asks if he has seen his mother, they got lost from the battle.</br>Can he help find his mother?'
+];    //text for consequence like attacking someone or running away
+var childChoice = [
+    "The soldier upholds his duties and aids the boy,</br>together they manoeuvre through the forest.</br>The boy remembers a canyon and that they walked through,</br>she should be waiting there",
+    "Too afraid for his life, he leaves the boy alone,</br>in the dark to fend for himself.</br>Lost, confused, and terrified, the soldier stumbles upon a river…"];       //array of child decision
+var riverText = [
+    "Falling into the river has drenched the soldier, and his clothes. But he must continue forward, or be captured and killed.",
+    "Leaving the boy to his fate has affected him to his core, always on alert.</br>He treks forward slowly up the river and stumbles upon a village…"];        //array of river text
+var canyonText = [
+    "The unlikely duo ascend the canyon, making their way with great haste.",
+    "The mother is nowhere to be seen, but the boy mentions a farm that they own and a village nearby, just past the canyon…"];       //array of canyon text
+var villageText = [
+    "The soldier approaches the village cautiously, the townsfolk are on edge it seems.</br>However, the soldier moves forward.",
+    "He feels the armies behind his back and must food and warm clothes.</br>He finds a marketplace and approaches a vendor…"];     //array of village text
+var finalEscapeText = [
+"From the chaos, the soldier scrambles for his weapons and seeks and exit.</br>The explosions have opened his door and a hole in the wall…",
+"Taking the door, he runs up the stairs and confronts two human soldiers...",
+"Making his way through the encampment, the soldier sees battle all around him, humans and demons killing one another.</br>He sees the gate to freedom, if he can make it…"
+];      //array of final escape text
+
+var checkpoints = [inForest = true, withChild = false, inFarm = false];     //checkpoints for the game
+
+var head = document.getElementById('heading');         //heading text
+var playTxt = document.getElementById('PLAY');        //play text
+var instructTxt = document.getElementById('INSTRUCT');        //instructions text
+var txt = document.getElementById('story');              //story text
+var hpText = document.getElementById('hp');          //health text
+var stamText = document.getElementById('stam');         //stamina text
+var img = document.getElementById('image');         //images to be shown
+var cText = [
+ c1 = document.getElementById('c1'), //first choice
+ c2 = document.getElementById('c2')  //second choice   
+];                                  //text for choices
+
+var backgroundMusic = document.getElementById("myAudio");       //background music
+backgroundMusic.play();
+
+
+Update();
+
+//function that is constantly updated
+function Update() {
+    switch (eState) {
+        //switch managing the game states
+        case 0:
+            //menu
+            //everything reverts to normal/null
+            playTxt.innerHTML = 'PLAY';
+            instructTxt.innerHTML = 'INSTRUCTIONS';
+
+            img.setAttribute('src', 'Images/Fighting Fantasy Images/Logo.png');
+
+            txt.innerHTML = '';
+            hpText.innerHTML = '';
+            stamText.innerHTML = '';
+
+            playerHealth = 100;
+            eHealth = 100;
+            stamina = 100;
+            pages = 0;
+            chapter = 0;
+
+            //click play to go to the game
+            playTxt.onclick = function () {
+                eState = 2;
+            }
+
+            //click instruct to go to the instruct screen
+            instructTxt.onclick = function () {
+                eState = 1;
+            }
+            break;
+        case 1:
+            //instructions called outside of Update
+            setInstructions();
+            break;
+        case 2:
+            //game
+            playTxt.innerHTML = '';
+            instructTxt.innerHTML = '';
+            hpText.innerHTML = "Health: " + playerHealth;
+            stamText.innerHTML = "Stamina: " + stamina;
+
+            //switch controls the choices and decisions
+            switch (chapter) {
+                case 0:
+                    //introduction
+                    img.setAttribute('src', 'Images/Fighting Fantasy Images/forest_location.jpg');
+
+                    if (checkpoints[0] === true) {
+                        txt.innerHTML = introText[pages];
+                        txt.onclick = function () {
+                            pages += 1;
+                        }
+                    }
+                    if (pages === 1) {
+                        chapter = 1;
+                    }
+                    break;
+                case 1:
+                    //attack or call out
+                    decisionTime(1);
+                    break;
+                case 2:
+                    //help the child or leave him, or is he dead
+                    pages = 0;
+
+                    if (killChild === false) {
+                        txt.innerHTML = forConsequence[1];
+                        decisionTime(2);
+                    }
+
+                    if (killChild === true) {
+                        txt.innerHTML = forConsequence[0];
+                        txt.onclick = function () {
+                            chapter = 3;
+                        }
+                    }
+                    break;
+                case 3:
+                    //search the forest, or wander alone
+                    if ((killChild === false) && (searchForest === true)) {
+                        checkpoints[1] = true;
+                        txt.innerHTML = childChoice[0];
+                        txt.onclick = function () {
+                            pages = 0;
+                            chapter = 4;
+                        }
+                    }
+
+                    if ((killChild === false) && (searchForest === false)) {
+                        checkpoints[1] = false;
+                        txt.innerHTML = childChoice[1];
+                        txt.onclick = function () {
+                            pages = 0;
+                            chapter = 4;
+                        }
+                    }
+
+                    if (killChild === true) {
+                        checkpoints[1] = false;
+                        txt.innerHTML = riverText[pages];
+                        txt.onclick = function () {
+                            pages += 1;
+                        }
+                        if (pages === 2) {
+                            combat(1);
+                        }
+                    }
+                    break;
+                case 4:
+                    //with child or not with child
+                    if (checkpoints[1] === false) {
+                        img.setAttribute('src', 'Images/Fighting Fantasy Images/village_location.jpg');
+                        checkpoints[2] = false;
+                        txt.innerHTML = villageText[pages];
+                        txt.onclick = function () {
+                            pages += 1;
+                        }
+                        if (pages >= 2) {
+                            pages = 0;
+                            chapter = 5;
+                        }
+                    }
+                    else {
+                        img.setAttribute('src', '');
+                        checkpoints[2] = true;
+                        txt.innerHTML = canyonText[pages];
+                        txt.onclick = function () {
+                            pages += 1;
+                        }
+                        if (pages >= 2) {
+                            pages = 0;
+                            chapter = 5;
+                        }
+                    }
+                    break;
+                case 5:
+                    //made it to the farm or asking for assistance
+                    //asking for help
+                    if (checkpoints[2] === false) {
+                        img.setAttribute('src', 'Images/Fighting Fantasy Images/marketplace.jpg');
+                        txt.innerHTML = "Ask for help...";
+                    }
+                    else {      //farm
+                        img.setAttribute('src', 'Images/Fighting Fantasy Images/farm.jpg');
+                        txt.innerHTML = "Welcome to the Farm...";
+                    }
+                    break;
+                case 6:
+
+                    break;
+            }
+            break;
+        case 3:
+            //death
+            txt.innerHTML = 'Game Over!!!';
+            setTimeout(function () { eState = 0; }, 3000);;
+            clearText();
+            break;
+        case 4:
+            //victory
+            playTxt.innerHTML = 'Victory!!!';
+            txt.innerHTML = 'Click to return to the Main Menu...'
+            txt.onclick = function () {
+                eState = 0;
+            }
+            break;
+    }
+    requestAnimationFrame(Update);              //to update the function repeatedly
+}
+
+//loop that creates the instruction text
+function setInstructions() {
+    var i = 0;
+    var text = "";
+    for (i; i < instructions.length; i++) {
+        text += instructions[i] + "<br>";
+    }
+    instructTxt.innerHTML = text;
+}
+
+//manages fighting
+function combat(fight) {
+    var damage = Math.floor((Math.random() * 45) + 1);               //how much damage the player takes
+    var dodgeChance = Math.floor((Math.random() * 100) + 1);               //chance to run away
+    var hitChance = Math.floor((Math.random() * 100) + 1);          //chance to hit enemy
+
+    var attackDrain = Math.floor((Math.random() * 35) + 15);          //amount of stamina lost per attack
+    var dodgeDrain = Math.floor((Math.random() * 20) + 10);            //amount of stamina lost per dodge
+    var stamRegen = Math.floor((Math.random() * 50) + 20);              //every successful action can regain stamina
+
+    if (stamina <= 0)
+        stamina = 0;
+    else if (stamina >= 100)
+        stamina = 100;
+    else { }
+
+    if (playerHealth >= 100)
+        playerHealth = 100;
+    else if (playerHealth <= 0)
+        eState = 3;
+    else { }
+
+
+    //different scenarios for each fight
+    if (fight === 1) {
+        //fight one
+        img.setAttribute('src', 'Images/Fighting Fantasy Images/crab_enemy.png');
+        txt.innerHTML = 'Die Traitor!!!</br>Enemy Health is: ' + eHealth;
+        if (eHealth <= 0) {
+            txt.innerHTML = 'Enemy Down';
+            checkpoints[2] = false;
+            setTimeout(function () { chapter = 4; }, 3000);
+        }
+    }
+    else if (fight === 2) {
+        //fight two
+        img.setAttribute('src', 'Images/Fighting Fantasy Images/dino.jpg');
+        txt.innerHTML = 'Die Human!!!</br>Enemy Health is: ' + eHealth;
+    }
+    else {
+        img.setAttribute('src', '');
+    }
+    //do nothing
+
+    //first choice
+    c1.innerHTML = 'Attack';
+    c1.onclick = function () {
+        if (hitChance >= stamina) {
+            playerHealth -= damage;
+        }
+        else {
+            eHealth -= damage;
+        }
+        stamina -= attackDrain;
+    }
+
+    //second choice
+    c2.innerHTML = 'Dodge';
+    c2.onclick = function () {
+        //save second choice
+        if (dodgeChance >= ((stamina / 2) + (10))) {
+            stamina += stamRegen;
+        }
+        else {
+            playerHealth -= damage;
+            stamina -= dodgeDrain;
+        }
+    }
+
+    //if enemy is dead, then continue with the story
+    if (eHealth <= 0) {
+        stamina = 100;
+        clearText();
+    }
+}
+
+function decisionTime(int) {
+    //forest choice
+    if (int === 1) {
+        img.setAttribute('src', 'Images/Fighting Fantasy Images/forest.jpg');
+
+        c1.innerHTML = forestChoice[0];
+        c1.onclick = function () {
+            //save first choice
+            killChild = true;
+            river = true;
+            chapter = 2;
+            pages = 0;
+            clearText();
+        }
+
+        //second choice
+        c2.innerHTML = forestChoice[1];
+        c2.onclick = function () {
+            //save second choice
+            killChild = false;
+            txt.innerHTML = forConsequence[1];
+            chapter = 2;
+            clearText();
+        }
+    }
+
+    if (int === 2) {
+        //child choice
+        c1.innerHTML = "Help the Child";
+        c2.innerHTML = "Leave the Child";
+        c1.onclick = function () {
+            searchForest = true;
+            chapter = 3;
+            clearText();
+        }
+        c2.onclick = function () {
+            searchForest = false;
+            chapter = 3;
+            clearText();
+        }
+    }
+}
+
+//clears the choices once they have been made
+function clearText() {
+    playTxt.innerHTML = '';
+    instructTxt.innerHTML = '';
+    c1.innerHTML = '';
+    c2.innerHTML = '';
+}
